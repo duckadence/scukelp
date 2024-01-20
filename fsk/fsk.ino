@@ -43,7 +43,7 @@ void send_message() {
       tone(BUZZER_PIN, 6000);
       delay(250);
     } else {
-      tone(BUZZER_PIN, 7000);
+      tone(BUZZER_PIN, 7500);
       delay(250);
     }
   }
