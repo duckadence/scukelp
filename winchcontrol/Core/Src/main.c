@@ -43,7 +43,10 @@
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-
+int surfaced = 1;
+int minLight = 0;
+int minTemp = 0;
+in maxTemp = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -51,7 +54,10 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
-
+void winchUp(int distance);
+void winchDown(int distance);
+void winchStop();
+void uploadData(int time, int depth, int temp);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -96,6 +102,30 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	// Limit switch interrupt
+
+	if (readDay() != previousDay) {
+		surfaced = 0;
+		previousDay = currentDay();
+	}
+
+	int lightLevel = readLightSensor();
+	if (lightRef > minLight && surfaced == FALSE) {
+		winchUp(-1);
+		surfaced == 1;
+	} else {
+		temp = readTempSensor();
+		if (temp < minTemp) {
+			winchUp(x); // x is some fixed distance tbd later
+		} else if (temp > maxTemp) {
+			winchDown(x);
+		} else {
+			winchStop();
+		}
+	}
+	
+
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
