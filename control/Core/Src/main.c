@@ -18,11 +18,11 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "fatfs.h"
-
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "fatfs.h"
+#include <stdio.h>
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -58,6 +58,9 @@ SPI_HandleTypeDef hspi1;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
+FATFS fs;
+FIL fil;
+
 uint8_t backlight_state = 1;
 int surfaced = 1;
 int minLight = 0;
@@ -129,6 +132,14 @@ int main(void)
   MX_SPI1_Init();
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
+  HAL_Delay(500);
+  f_mount(&fs, "", 0);
+  f_open(&fil, "test.txt", FA_OPEN_ALWAYS | FA_WRITE | FA_READ);
+  f_lseek(&fil, fil.fsize);
+  f_puts("This is an example text to check SD Card Module with STM32 Blue Pill\n", &fil);
+  f_close(&fil);
+
+
   lcd_init();
   lcd_backlight(1); // Turn on backlight
 
