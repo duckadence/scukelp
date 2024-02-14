@@ -18,9 +18,11 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "fatfs.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "fatfs.h"
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 /* USER CODE END Includes */
@@ -58,14 +60,12 @@ SPI_HandleTypeDef hspi1;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-FATFS fs;
-FIL fil;
-
 uint8_t backlight_state = 1;
 int surfaced = 1;
 int minLight = 0;
 int minTemp = 0;
 int maxTemp = 0;
+char text[17];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -92,6 +92,8 @@ void lcd_write_string(char *str);
 void lcd_set_cursor(uint8_t row, uint8_t column);
 void lcd_clear(void);
 void lcd_backlight(uint8_t state);
+
+void process_SD_card(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -132,20 +134,13 @@ int main(void)
   MX_SPI1_Init();
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
-  HAL_Delay(500);
-  f_mount(&fs, "", 0);
-  f_open(&fil, "test.txt", FA_OPEN_ALWAYS | FA_WRITE | FA_READ);
-  f_lseek(&fil, fil.fsize);
-  f_puts("This is an example text to check SD Card Module with STM32 Blue Pill\n", &fil);
-  f_close(&fil);
-
 
   lcd_init();
   lcd_backlight(1); // Turn on backlight
 
-  char *text = "EmbeddedThere";
-  char int_to_str[10];
-  int count=0;
+  process_SD_card();
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -174,16 +169,7 @@ int main(void)
 		}
 	}
 	*/
-	
-	sprintf(int_to_str, "%d", count);
-	lcd_clear();
-	lcd_set_cursor(0, 0);
-	lcd_write_string(text);
-	lcd_set_cursor(1, 0);
-	lcd_write_string(int_to_str);
-	count++;
-	memset(int_to_str, 0, sizeof(int_to_str));
-	HAL_Delay(1500);
+
 
 
     /* USER CODE END WHILE */
@@ -484,6 +470,52 @@ void lcd_backlight(uint8_t state) {
   } else {
     backlight_state = 0;
   }
+}
+
+void process_SD_card( void )
+{
+  FATFS       FatFs;                //Fatfs handle
+  FIL         fil;                  //File handle
+  FRESULT     fres;                 //Result after operations
+
+  do
+  {
+    //Mount the SD Card
+    fres = f_mount(&FatFs, "", 1);    //1=mount now
+    if (fres != FR_OK)
+    {
+      printf("No SD Card found : (%i)\r\n", fres);
+      break;
+    }
+
+    //Open the file
+    fres = f_open(&fil, "EmbeTronicX.txt", FA_WRITE | FA_READ | FA_CREATE_ALWAYS);
+    if(fres != FR_OK)
+    {
+      printf("File creation/open Error : (%i)\r\n", fres);
+      break;
+    }
+
+    printf("Writing data!!!\r\n");
+    //write the data
+    f_puts("Welcome to EmbeTronicX", &fil);
+
+    //close your file
+    f_close(&fil);
+
+#if 0
+    //Delete the file.
+    fres = f_unlink(EmbeTronicX.txt);
+    if (fres != FR_OK)
+    {
+      printf("Cannot able to delete the file\n");
+    }
+#endif
+  } while( false );
+
+  //We're done, so de-mount the drive
+  f_mount(NULL, "", 0);
+  printf("SD Card Unmounted Successfully!!!\r\n");
 }
 /* USER CODE END 4 */
 

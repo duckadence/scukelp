@@ -1,4 +1,4 @@
-Core/Src/fatfs_sd.o: ../Core/Src/fatfs_sd.c \
+Core/Src/fatfs_sd_card.o: ../Core/Src/fatfs_sd_card.c \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h \
  ../Core/Inc/stm32l4xx_hal_conf.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rcc.h \
@@ -30,7 +30,8 @@ Core/Src/fatfs_sd.o: ../Core/Src/fatfs_sd.c \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h \
  ../Middlewares/Third_Party/FatFs/src/diskio.h \
- ../Middlewares/Third_Party/FatFs/src/integer.h ../Core/Inc/fatfs_sd.h
+ ../Middlewares/Third_Party/FatFs/src/integer.h \
+ ../Core/Inc/fatfs_sd_card.h
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h:
 ../Core/Inc/stm32l4xx_hal_conf.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rcc.h:
@@ -63,4 +64,4 @@ Core/Src/fatfs_sd.o: ../Core/Src/fatfs_sd.c \
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h:
 ../Middlewares/Third_Party/FatFs/src/diskio.h:
 ../Middlewares/Third_Party/FatFs/src/integer.h:
-../Core/Inc/fatfs_sd.h:
+../Core/Inc/fatfs_sd_card.h:
