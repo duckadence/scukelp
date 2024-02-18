@@ -142,6 +142,7 @@ int main(void)
   lcd_clear();
   lcd_set_cursor(0, 0);
   lcd_write_string(text);
+  HAL_Delay(1000);
 
   process_SD_card();
 
@@ -199,16 +200,10 @@ void SystemClock_Config(void)
     Error_Handler();
   }
 
-  /** Configure LSE Drive Capability
-  */
-  HAL_PWR_EnableBkUpAccess();
-  __HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_LOW);
-
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSE|RCC_OSCILLATORTYPE_MSI;
-  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_MSI;
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
   RCC_OscInitStruct.MSICalibrationValue = 0;
   RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
@@ -237,10 +232,6 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-
-  /** Enable MSI Auto calibration
-  */
-  HAL_RCCEx_EnableMSIPLLMode();
 }
 
 /**
@@ -310,11 +301,11 @@ static void MX_SPI3_Init(void)
   hspi3.Instance = SPI3;
   hspi3.Init.Mode = SPI_MODE_MASTER;
   hspi3.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi3.Init.DataSize = SPI_DATASIZE_4BIT;
+  hspi3.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi3.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi3.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi3.Init.NSS = SPI_NSS_SOFT;
-  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_128;
   hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -383,14 +374,14 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(SD_CS_GPIO_Port, SD_CS_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : PA11 */
-  GPIO_InitStruct.Pin = GPIO_PIN_11;
+  /*Configure GPIO pin : SD_CS_Pin */
+  GPIO_InitStruct.Pin = SD_CS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(SD_CS_GPIO_Port, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
@@ -478,32 +469,41 @@ void lcd_backlight(uint8_t state) {
 
 void process_SD_card( void )
 {
-  FATFS       FatFs;                //Fatfs handle
+  FATFS       *FatFs;                //Fatfs handle
   FIL         fil;                  //File handle
   FRESULT     fres;                 //Result after operations
+  char		  int_to_str[10];
 
   do
   {
+	FatFs = malloc(sizeof (FATFS));
     //Mount the SD Card
-    fres = f_mount(&FatFs, "", 1);    //1=mount now
+    fres = f_mount(FatFs, "", 0);    //1=mount now
     if (fres != FR_OK)
     {
     	  strcpy(text, "Mount failed");
     	  lcd_clear();
     	  lcd_set_cursor(0, 0);
     	  lcd_write_string(text);
+    	  sprintf(int_to_str, "%d", fres);
+    	  lcd_set_cursor(1, 0);
+    	  lcd_write_string(int_to_str);
     	  HAL_Delay(1000);
-      break;
+    	  break;
     }
 
     //Open the file
-    fres = f_open(&fil, "EmbeTronicX.txt", FA_WRITE | FA_READ | FA_CREATE_ALWAYS);
+    fres = f_open(&fil, "peepeepoopoo.txt", FA_WRITE | FA_READ | FA_CREATE_ALWAYS);
     if(fres != FR_OK)
     {
     	  strcpy(text, "File not open");
     	  lcd_clear();
     	  lcd_set_cursor(0, 0);
     	  lcd_write_string(text);
+    	  sprintf(int_to_str, "%d", fres);
+    	      	  lcd_set_cursor(1, 0);
+    	      	  lcd_write_string(int_to_str);
+    	      	  HAL_Delay(1000);
     	  HAL_Delay(1000);
       break;
     }
@@ -514,7 +514,7 @@ void process_SD_card( void )
     lcd_write_string(text);
     HAL_Delay(1000);
     //write the data
-    f_puts("Welcome to EmbeTronicX", &fil);
+    f_puts("This finally works!", &fil);
 
     //close your file
     f_close(&fil);
@@ -536,6 +536,7 @@ void process_SD_card( void )
   lcd_set_cursor(0, 0);
   lcd_write_string(text);
   HAL_Delay(1000);
+  free(FatFs);
 }
 /* USER CODE END 4 */
 
