@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #define ARM_MATH_CM4
 #include "arm_math.h"
@@ -64,6 +65,7 @@ char msg[10];
 volatile uint16_t buffer[BUFFER_SIZE];
 volatile uint8_t halfFlag = 0;
 volatile uint8_t fullFlag = 0;
+volatile uint8_t updatedFlag = 0;
 
 arm_rfft_fast_instance_f32 fftHandler;
 
@@ -75,12 +77,20 @@ volatile int16_t fftIndex = 0;
 float peakVal = 0.0f;
 uint16_t peakHz = 0;
 
-int received[18];
+char message[8];
+int received[24];
 int receivedIndex = 0;
 int zeroCount = 0;
 int oneCount = 0;
 
+float temp;
+int depth;
+
+uint32_t curTime;
 uint8_t Stepper1_Dir = DIR_CW;
+
+const int minTemp = 6;
+const int maxTemp = 14;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -135,11 +145,10 @@ int main(void) {
 	HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
 	HAL_ADC_Start_DMA(&hadc1, (uint32_t*) buffer, BUFFER_SIZE);
 	HAL_TIM_Base_Start_IT(&htim2);
-	/*
-	 STEPPERS_Init_TMR(&htim15);
-	 STEPPER_SetSpeed(STEPPER_MOTOR1, 10);
-	 STEPPER_Step_NonBlocking(STEPPER_MOTOR1, 200000, Stepper1_Dir);
-	 */
+
+	STEPPERS_Init_TMR(&htim15);
+	STEPPER_SetSpeed(STEPPER_MOTOR1, 10);
+
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
@@ -154,6 +163,24 @@ int main(void) {
 		if (fullFlag) {
 			process_data(BUFFER_SIZE / 2, BUFFER_SIZE);
 			fullFlag = 0;
+		}
+
+		if (updatedFlag) {
+			curTime = HAL_GetTick();
+
+			if (temp < minTemp + 3) {
+				depth -= 5;
+				Stepper1_Dir = DIR_CW;
+				STEPPER_Step_Blocking(STEPPER_MOTOR1, 2000, Stepper1_Dir);
+				if (depth < 0) depth = 0;
+			} else if (temp > maxTemp - 3) {
+				depth += 5;
+				Stepper1_Dir = DIR_CCW;
+				STEPPER_Step_Blocking(STEPPER_MOTOR1, 2000, Stepper1_Dir);
+				if (depth > 200) depth = 200;
+			}
+
+			updatedFlag = 0;
 		}
 		/* USER CODE END WHILE */
 
@@ -411,7 +438,7 @@ void receive_bit(int bit, int amount) {
 		received[receivedIndex] = bit;
 		receivedIndex++;
 	}
-	if (receivedIndex > 17) {
+	if (receivedIndex > 23) {
 		/*
 		 sprintf(msg, "Msg:\r\n");
 		 HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
@@ -422,9 +449,23 @@ void receive_bit(int bit, int amount) {
 		 }
 		 sprintf(msg, "\r\n");
 		 HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
-
-		 receivedIndex = 0;
 		 */
+		for (int count1 = 0, count2 = 8, count3 = 16; count1 < 8;
+				count1++, count2++, count3++) {
+			if (received[count1] + received[count2] + received[count3] >= 2) {
+				message[count1] = '1';
+			} else if (received[count1] + received[count2] + received[count3]
+					<= 1) {
+				message[count1] = '0';
+			}
+		}
+
+		temp = strtol(message, NULL, 2);
+		temp /= 10;
+
+		updatedFlag = 1;
+		receivedIndex = 0;
+
 	}
 }
 
@@ -468,7 +509,7 @@ void process_data(int start, int end) {
 			peakVal = 0.0f;
 			peakHz = 0.0f;
 
-			for (uint16_t index = 1; index < FFT_BUFFER_SIZE / 2; index++) {
+			for (uint16_t index = 1; index < FFT_BUFFER_SIZE / 8; index++) {
 
 				if (fftMagOut[index] > peakVal) {
 					peakVal = fftMagOut[index];
