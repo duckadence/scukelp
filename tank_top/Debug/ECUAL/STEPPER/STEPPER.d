@@ -29,6 +29,8 @@ ECUAL/STEPPER/STEPPER.o: ../ECUAL/STEPPER/STEPPER.c \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr_ex.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim_ex.h \
+ ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h \
+ ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h \
  ../ECUAL/STEPPER/STEPPER.h ../ECUAL/STEPPER/STEPPER_cfg.h
 ../ECUAL/STEPPER/../../util/DWT_Delay.h:
 ../Drivers/CMSIS/Device/ST/STM32L4xx/Include/stm32l4xx.h:
@@ -60,5 +62,7 @@ ECUAL/STEPPER/STEPPER.o: ../ECUAL/STEPPER/STEPPER.c \
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr_ex.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim_ex.h:
+../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h:
+../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h:
 ../ECUAL/STEPPER/STEPPER.h:
 ../ECUAL/STEPPER/STEPPER_cfg.h:
