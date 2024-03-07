@@ -51,7 +51,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Core/Inc/dsp/support_functions.h \
  ../Core/Inc/dsp/quaternion_math_functions.h \
  ../Core/Inc/dsp/window_functions.h \
- C:/Users/Jonathan\ Lin/Documents/GitHub/scukelp/tank_top/util/../ECUAL/STEPPER/STEPPER.h
+ C:/Users/jonli/Documents/GitHub/scukelp/tank_top/ECUAL/../ECUAL/STEPPER/STEPPER.h
 ../Core/Inc/main.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h:
 ../Core/Inc/stm32l4xx_hal_conf.h:
@@ -116,4 +116,4 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Core/Inc/dsp/support_functions.h:
 ../Core/Inc/dsp/quaternion_math_functions.h:
 ../Core/Inc/dsp/window_functions.h:
-C:/Users/Jonathan\ Lin/Documents/GitHub/scukelp/tank_top/util/../ECUAL/STEPPER/STEPPER.h:
+C:/Users/jonli/Documents/GitHub/scukelp/tank_top/ECUAL/../ECUAL/STEPPER/STEPPER.h:

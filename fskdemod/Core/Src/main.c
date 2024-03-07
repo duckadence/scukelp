@@ -153,28 +153,6 @@ int main(void)
 		  process_data(BUFFER_SIZE/2, BUFFER_SIZE);
 		  fullFlag = 0;
 	  }
-	  /*
-	  if (fftFlag) {
-		  peakVal = 0.0f;
-		  peakHz = 0.0f;
-
-		  uint16_t freqIndex = 0;
-
-		  for (uint16_t index = 2; index < FFT_BUFFER_SIZE; index += 2){
-			  float curVal = sqrtf((fftBufOut[index] * fftBufOut[index]) + (fftBufOut[index + 1] * fftBufOut[index+1]));
-
-			  if (curVal > peakVal) {
-				  peakVal = curVal;
-				  peakHz = (uint16_t) (freqIndex * SAMPLE_RATE_HZ / ((float) FFT_BUFFER_SIZE));
-			  }
-
-			  freqIndex++;
-		  }
-		  sprintf(msg, "%hu\r\n", peakHz);
-		  HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
-		  fftFlag = 0;
-  	  }
-	  */
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -466,8 +444,8 @@ void process_data(int start, int end) {
 
 	for (uint8_t count = start; count < end; count++) {
 		// Convert to float
-		//in = INT16_TO_FLOAT * ((float) buffer[count]);
-		in = ((float) buffer[count]);
+		in = INT16_TO_FLOAT * ((float) buffer[count]);
+		//in = ((float) buffer[count]);
 
 		// Fill FFT Buffer
 		fftBufIn[fftIndex] = in;
@@ -485,7 +463,7 @@ void process_data(int start, int end) {
 					  peakVal = 0.0f;
 					  peakHz = 0.0f;
 
-					  for (uint16_t index = 1; index < FFT_BUFFER_SIZE/2; index ++){
+					  for (uint16_t index = 1; index < FFT_BUFFER_SIZE/4; index ++){
 
 						  if (fftMagOut[index] > peakVal) {
 							  peakVal = fftMagOut[index];

@@ -149,6 +149,7 @@ int main(void)
   MX_ADC1_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
+  printf("foo\n");
 	arm_rfft_fast_init_f32(&fftHandler, FFT_BUFFER_SIZE);
 	HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
 	HAL_ADC_Start_DMA(&hadc1, (uint32_t*) buffer, BUFFER_SIZE);
@@ -162,6 +163,8 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
+		printf("foo\n");
+		/*
 		if (killFlag) {
 			depth = 0;
 			STEPPER_Stop(STEPPER_MOTOR1);
@@ -196,7 +199,9 @@ int main(void)
 				updatedFlag = 0;
 			}
 		}
-
+		*/
+		sprintf(msg, "bar\n");
+		HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
 		if (halfFlag) {
 			process_data(0, BUFFER_SIZE / 2);
 			halfFlag = 0;
@@ -453,7 +458,7 @@ static void MX_USART1_UART_Init(void)
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
   huart1.Init.BaudRate = 115200;
-  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.WordLength = UART_WORDLENGTH_7B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
   huart1.Init.Mode = UART_MODE_TX_RX;
@@ -461,7 +466,7 @@ static void MX_USART1_UART_Init(void)
   huart1.Init.OverSampling = UART_OVERSAMPLING_16;
   huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart1) != HAL_OK)
+  if (HAL_RS485Ex_Init(&huart1, UART_DE_POLARITY_HIGH, 0, 0) != HAL_OK)
   {
     Error_Handler();
   }
