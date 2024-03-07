@@ -57,9 +57,9 @@
 ADC_HandleTypeDef hadc1;
 
 TIM_HandleTypeDef htim2;
-TIM_HandleTypeDef htim15;
+TIM_HandleTypeDef htim16;
 
-UART_HandleTypeDef huart1;
+UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 char msg[10];
@@ -101,14 +101,13 @@ const int maxTemp = 14;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_TIM2_Init(void);
-static void MX_TIM15_Init(void);
 static void MX_ADC1_Init(void);
-static void MX_USART1_UART_Init(void);
+static void MX_USART2_UART_Init(void);
+static void MX_TIM16_Init(void);
 /* USER CODE BEGIN PFP */
 void process_data(int start, int end);
 void bit_detect(int freq);
 void receive_bit(int bit, int amount);
-#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -145,17 +144,18 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_TIM2_Init();
-  MX_TIM15_Init();
   MX_ADC1_Init();
-  MX_USART1_UART_Init();
+  MX_USART2_UART_Init();
+  MX_TIM16_Init();
   /* USER CODE BEGIN 2 */
-  printf("foo\n");
+	HAL_UART_Transmit(&huart2, (uint8_t*) msg, strlen(msg), HAL_MAX_DELAY);
 	arm_rfft_fast_init_f32(&fftHandler, FFT_BUFFER_SIZE);
 	HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
 	HAL_ADC_Start_DMA(&hadc1, (uint32_t*) buffer, BUFFER_SIZE);
 	HAL_TIM_Base_Start_IT(&htim2);
 
-	STEPPERS_Init_TMR(&htim15);
+	STEPPERS_Init_TMR(&htim16);
+
 	STEPPER_SetSpeed(STEPPER_MOTOR1, 10);
 
   /* USER CODE END 2 */
@@ -163,45 +163,44 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
-		printf("foo\n");
+		sprintf(msg, "peepoo\r\n");
+		HAL_UART_Transmit(&huart2, (uint8_t*) msg, strlen(msg), HAL_MAX_DELAY);
 		/*
-		if (killFlag) {
-			depth = 0;
-			STEPPER_Stop(STEPPER_MOTOR1);
-			Stepper1_Dir = DIR_CW;
-			while (!limitFlag) {
-				STEPPER_Step_Blocking(STEPPER_MOTOR1, 2000, Stepper1_Dir);
-			}
-		}
-		if (limitFlag) {
-			depth = 0;
-			STEPPER_Stop(STEPPER_MOTOR1);
-			Stepper1_Dir = DIR_CCW;
-			STEPPER_Step_Blocking(STEPPER_MOTOR1, 2000, Stepper1_Dir);
-		} else {
-			if (updatedFlag) {
-				curTime = HAL_GetTick();
+		 if (killFlag) {
+		 depth = 0;
+		 STEPPER_Stop(STEPPER_MOTOR1);
+		 Stepper1_Dir = DIR_CW;
+		 while (!limitFlag) {
+		 STEPPER_Step_Blocking(STEPPER_MOTOR1, 2000, Stepper1_Dir);
+		 }
+		 }
+		 if (limitFlag) {
+		 depth = 0;
+		 STEPPER_Stop(STEPPER_MOTOR1);
+		 Stepper1_Dir = DIR_CCW;
+		 STEPPER_Step_Blocking(STEPPER_MOTOR1, 2000, Stepper1_Dir);
+		 } else {
+		 if (updatedFlag) {
+		 curTime = HAL_GetTick();
 
-				if (temp < minTemp + 3) {
-					depth -= 5;
-					Stepper1_Dir = DIR_CW;
-					STEPPER_Step_Blocking(STEPPER_MOTOR1, 2000, Stepper1_Dir);
-					if (depth < 0)
-						depth = 0;
-				} else if (temp > maxTemp - 3) {
-					depth += 5;
-					Stepper1_Dir = DIR_CCW;
-					STEPPER_Step_Blocking(STEPPER_MOTOR1, 2000, Stepper1_Dir);
-					if (depth > 200)
-						depth = 200;
-				}
+		 if (temp < minTemp + 3) {
+		 depth -= 5;
+		 Stepper1_Dir = DIR_CW;
+		 STEPPER_Step_Blocking(STEPPER_MOTOR1, 2000, Stepper1_Dir);
+		 if (depth < 0)
+		 depth = 0;
+		 } else if (temp > maxTemp - 3) {
+		 depth += 5;
+		 Stepper1_Dir = DIR_CCW;
+		 STEPPER_Step_Blocking(STEPPER_MOTOR1, 2000, Stepper1_Dir);
+		 if (depth > 200)
+		 depth = 200;
+		 }
 
-				updatedFlag = 0;
-			}
-		}
-		*/
-		sprintf(msg, "bar\n");
-		HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
+		 updatedFlag = 0;
+		 }
+		 }
+		 */
 		if (halfFlag) {
 			process_data(0, BUFFER_SIZE / 2);
 			halfFlag = 0;
@@ -321,7 +320,7 @@ static void MX_ADC1_Init(void)
 
   /** Configure Regular Channel
   */
-  sConfig.Channel = ADC_CHANNEL_5;
+  sConfig.Channel = ADC_CHANNEL_11;
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
   sConfig.SingleDiff = ADC_SINGLE_ENDED;
@@ -396,83 +395,69 @@ static void MX_TIM2_Init(void)
 }
 
 /**
-  * @brief TIM15 Initialization Function
+  * @brief TIM16 Initialization Function
   * @param None
   * @retval None
   */
-static void MX_TIM15_Init(void)
+static void MX_TIM16_Init(void)
 {
 
-  /* USER CODE BEGIN TIM15_Init 0 */
+  /* USER CODE BEGIN TIM16_Init 0 */
 
-  /* USER CODE END TIM15_Init 0 */
+  /* USER CODE END TIM16_Init 0 */
 
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  /* USER CODE BEGIN TIM16_Init 1 */
 
-  /* USER CODE BEGIN TIM15_Init 1 */
-
-  /* USER CODE END TIM15_Init 1 */
-  htim15.Instance = TIM15;
-  htim15.Init.Prescaler = 0;
-  htim15.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim15.Init.Period = 65535;
-  htim15.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim15.Init.RepetitionCounter = 0;
-  htim15.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim15) != HAL_OK)
+  /* USER CODE END TIM16_Init 1 */
+  htim16.Instance = TIM16;
+  htim16.Init.Prescaler = 0;
+  htim16.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim16.Init.Period = 65535;
+  htim16.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim16.Init.RepetitionCounter = 0;
+  htim16.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim16) != HAL_OK)
   {
     Error_Handler();
   }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim15, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim15, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM15_Init 2 */
+  /* USER CODE BEGIN TIM16_Init 2 */
 
-  /* USER CODE END TIM15_Init 2 */
+  /* USER CODE END TIM16_Init 2 */
 
 }
 
 /**
-  * @brief USART1 Initialization Function
+  * @brief USART2 Initialization Function
   * @param None
   * @retval None
   */
-static void MX_USART1_UART_Init(void)
+static void MX_USART2_UART_Init(void)
 {
 
-  /* USER CODE BEGIN USART1_Init 0 */
+  /* USER CODE BEGIN USART2_Init 0 */
 
-  /* USER CODE END USART1_Init 0 */
+  /* USER CODE END USART2_Init 0 */
 
-  /* USER CODE BEGIN USART1_Init 1 */
+  /* USER CODE BEGIN USART2_Init 1 */
 
-  /* USER CODE END USART1_Init 1 */
-  huart1.Instance = USART1;
-  huart1.Init.BaudRate = 115200;
-  huart1.Init.WordLength = UART_WORDLENGTH_7B;
-  huart1.Init.StopBits = UART_STOPBITS_1;
-  huart1.Init.Parity = UART_PARITY_NONE;
-  huart1.Init.Mode = UART_MODE_TX_RX;
-  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
-  huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_RS485Ex_Init(&huart1, UART_DE_POLARITY_HIGH, 0, 0) != HAL_OK)
+  /* USER CODE END USART2_Init 1 */
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 115200;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_RS485Ex_Init(&huart2, UART_DE_POLARITY_HIGH, 0, 0) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN USART1_Init 2 */
+  /* USER CODE BEGIN USART2_Init 2 */
 
-  /* USER CODE END USART1_Init 2 */
+  /* USER CODE END USART2_Init 2 */
 
 }
 
@@ -491,16 +476,6 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4, GPIO_PIN_RESET);
-
-  /*Configure GPIO pins : PA1 PA2 PA3 PA4 */
-  GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PB5 */
   GPIO_InitStruct.Pin = GPIO_PIN_5;
@@ -572,12 +547,6 @@ void bit_detect(int freq) {
 }
 
 void process_data(int start, int end) {
-	/*
-	 for (int count = start; count < end; count++) {
-	 sprintf(msg, "%hu\r\n", buffer[count]);
-	 HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
-	 }
-	 */
 	float in;
 
 	for (uint8_t count = start; count < end; count++) {
@@ -604,7 +573,7 @@ void process_data(int start, int end) {
 							/ ((float) FFT_BUFFER_SIZE));
 				}
 			}
-			printf("%d\n", (int)peakHz);
+			//printf("%d\n", (int)peakHz);
 			bit_detect(peakHz);
 
 			// Reset FFT array index;
@@ -612,15 +581,6 @@ void process_data(int start, int end) {
 		}
 	}
 
-}
-
-PUTCHAR_PROTOTYPE
-{
-  /* Place your implementation of fputc here */
-  /* e.g. write a character to the USART1 and Loop until the end of transmission */
-  HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
-
-  return ch;
 }
 
 // Called when first half of buffer is filled

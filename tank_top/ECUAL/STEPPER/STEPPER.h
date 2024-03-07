@@ -22,7 +22,7 @@
 
 // Stepper Timer Base Options
 #define STEPPER_TIMER_EN   1
-#define STEPPER_TIMER      TIM15
+#define STEPPER_TIMER      TIM16
 #define STEPPER_TIMER_CLK  80
 #define STEPPER_TIME_BASE  1
 
