@@ -121,7 +121,7 @@ void STEPPERS_Init_TMR(TIM_HandleTypeDef* TMR_Handle)
     TIM_MasterConfigTypeDef sMasterConfig = {0};
     uint32_t ARR_Value = 0;
 
-	//STEPPERS_Init();
+	STEPPERS_Init();
 
 	/*--------[ Configure The Stepper Timer Base If Enabled ]-------*/
     if(STEPPER_TIMER_EN == 1)
