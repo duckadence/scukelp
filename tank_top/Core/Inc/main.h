@@ -57,6 +57,9 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define limit_switch_Pin GPIO_PIN_1
+#define limit_switch_GPIO_Port GPIOB
+#define limit_switch_EXTI_IRQn EXTI1_IRQn
 #define motorcontrol1_Pin GPIO_PIN_8
 #define motorcontrol1_GPIO_Port GPIOA
 #define motorcontrol2_Pin GPIO_PIN_11
