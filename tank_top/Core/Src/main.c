@@ -48,7 +48,7 @@
 #define FLOAT_TO_INT16 32768.0f
 #define BUFFER_SIZE 256
 #define FFT_BUFFER_SIZE 4096
-#define SAMPLE_RATE_HZ 40000
+#define SAMPLE_RATE_HZ 20000
 #define ZERO_FREQ 1000
 #define ONE_FREQ 2000
 /* USER CODE END PM */
@@ -324,7 +324,7 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_5;
   sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_247CYCLES_5;
+  sConfig.SamplingTime = ADC_SAMPLETIME_640CYCLES_5;
   sConfig.SingleDiff = ADC_SINGLE_ENDED;
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset = 0;
@@ -360,7 +360,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 3;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 499;
+  htim2.Init.Period = 50-1;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -521,6 +521,7 @@ void receive_bit(int bit, int amount) {
 		receivedIndex++;
 	}
 	if (receivedIndex > 23) {
+		HAL_TIM_Base_Stop_IT(&htim);
 		for (int count1 = 0, count2 = 8, count3 = 16; count1 < 8;
 				count1++, count2++, count3++) {
 			if (received[count1] + received[count2] + received[count3] >= 2) {
@@ -536,7 +537,7 @@ void receive_bit(int bit, int amount) {
 
 		updatedFlag = 1;
 		receivedIndex = 0;
-
+		HAL_TIM_Base_Start_IT(&htim2);
 	}
 }
 
