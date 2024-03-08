@@ -151,8 +151,8 @@ int main(void)
   /* USER CODE BEGIN 2 */
 	arm_rfft_fast_init_f32(&fftHandler, FFT_BUFFER_SIZE);
 	HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
-	//HAL_ADC_Start_DMA(&hadc1, (uint32_t*) buffer, BUFFER_SIZE);
-	//HAL_TIM_Base_Start_IT(&htim2);
+	HAL_ADC_Start_DMA(&hadc1, (uint32_t*) buffer, BUFFER_SIZE);
+	HAL_TIM_Base_Start_IT(&htim2);
 
 	STEPPERS_Init();
 	STEPPER_SetSpeed(STEPPER_MOTOR1, 14);
@@ -161,7 +161,8 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
-
+		printf("peepeepoopoo in my pants \n\r");
+		/*
 		if (killFlag) {
 			printf("Kill switch hit\n\r");
 			if (!limitFlag) {
@@ -177,7 +178,7 @@ int main(void)
 				HAL_Delay(1000);
 			}
 
-/*
+
 			 } else {
 			 if (updatedFlag) {
 			 curTime = HAL_GetTick();
@@ -210,7 +211,7 @@ int main(void)
 				STEPPER_Step_Blocking(STEPPER_MOTOR1, 10, Stepper1_Dir);
 				limitFlag = 0;
 			}
-		}
+		//}
 
 		if (halfFlag) {
 			process_data(0, BUFFER_SIZE / 2);
@@ -469,7 +470,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : kill_switch_Pin */
   GPIO_InitStruct.Pin = kill_switch_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(kill_switch_GPIO_Port, &GPIO_InitStruct);
 
