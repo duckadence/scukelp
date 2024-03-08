@@ -21,7 +21,7 @@
 #define STEPPER_UNITS      1
 
 // Stepper Timer Base Options
-#define STEPPER_TIMER_EN   1
+#define STEPPER_TIMER_EN   0
 #define STEPPER_TIMER      TIM15
 #define STEPPER_TIMER_CLK  80
 #define STEPPER_TIME_BASE  1

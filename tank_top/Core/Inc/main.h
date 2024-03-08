@@ -57,10 +57,18 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define motorcontrol1_Pin GPIO_PIN_8
+#define motorcontrol1_GPIO_Port GPIOA
+#define motorcontrol2_Pin GPIO_PIN_11
+#define motorcontrol2_GPIO_Port GPIOA
 #define SWDIO_Pin GPIO_PIN_13
 #define SWDIO_GPIO_Port GPIOA
 #define SWCLK_Pin GPIO_PIN_14
 #define SWCLK_GPIO_Port GPIOA
+#define motorcontrol4_Pin GPIO_PIN_4
+#define motorcontrol4_GPIO_Port GPIOB
+#define motorcontrol3_Pin GPIO_PIN_5
+#define motorcontrol3_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

@@ -92,7 +92,7 @@ void STEPPERS_Init(void)
     		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     		HAL_GPIO_Init(STEPPER_CfgParam[i].IN_GPIO[j], &GPIO_InitStruct);
     	}
-    	gs_STEPPER_info[i].Dir = DIR_CW;
+    	gs_STEPPER_info[i].Dir = DIR_CCW;
     	gs_STEPPER_info[i].Step_Index = 0;
     	gs_STEPPER_info[i].Steps = 0;
     	gs_STEPPER_info[i].Ticks = 0;
@@ -214,6 +214,8 @@ void STEPPER_Step_Blocking(uint8_t au8_STEPPER_Instance, uint32_t au32_Steps, ui
 {
 	uint32_t i = 0;
 	uint32_t DelayTimeMs = 0;
+
+	gs_STEPPER_info[au8_STEPPER_Instance].Dir = au8_DIR;
 
 	gs_STEPPER_info[au8_STEPPER_Instance].Blocked = 1;
 	DelayTimeMs = (60000/(gs_STEPPER_info[au8_STEPPER_Instance].RPM * STEPPER_CfgParam[au8_STEPPER_Instance].STEPS_PER_REV));

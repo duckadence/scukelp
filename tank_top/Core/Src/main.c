@@ -57,7 +57,6 @@
 ADC_HandleTypeDef hadc1;
 
 TIM_HandleTypeDef htim2;
-TIM_HandleTypeDef htim15;
 
 UART_HandleTypeDef huart2;
 
@@ -91,7 +90,7 @@ float temp;
 int depth;
 
 uint32_t curTime;
-uint8_t Stepper1_Dir = DIR_CW;
+uint8_t Stepper1_Dir; // Clockwise up, counterclockwise down
 
 const int minTemp = 6;
 const int maxTemp = 14;
@@ -103,11 +102,11 @@ static void MX_GPIO_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_USART2_UART_Init(void);
-static void MX_TIM15_Init(void);
 /* USER CODE BEGIN PFP */
 void process_data(int start, int end);
 void bit_detect(int freq);
 void receive_bit(int bit, int amount);
+#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -146,26 +145,31 @@ int main(void)
   MX_TIM2_Init();
   MX_ADC1_Init();
   MX_USART2_UART_Init();
-  MX_TIM15_Init();
   /* USER CODE BEGIN 2 */
-	HAL_UART_Transmit(&huart2, (uint8_t*) msg, strlen(msg), HAL_MAX_DELAY);
 	arm_rfft_fast_init_f32(&fftHandler, FFT_BUFFER_SIZE);
 	HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
 	HAL_ADC_Start_DMA(&hadc1, (uint32_t*) buffer, BUFFER_SIZE);
 	HAL_TIM_Base_Start_IT(&htim2);
 
-	STEPPERS_Init_TMR(&htim15);
-
+	STEPPERS_Init();
+	//STEPPERS_Init_TMR(&htim15);
 	STEPPER_SetSpeed(STEPPER_MOTOR1, 14);
-	STEPPER_Step_Blocking(STEPPER_MOTOR1, 5000, Stepper1_Dir);
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
-		//sprintf(msg, "peepoo\r\n");
-		//HAL_UART_Transmit(&huart2, (uint8_t*) msg, strlen(msg), HAL_MAX_DELAY);
+		Stepper1_Dir = DIR_CW;
+		STEPPER_Step_Blocking(STEPPER_MOTOR1, 1000, Stepper1_Dir);
+		printf("Direction: %d\r\n", Stepper1_Dir);
+
+		HAL_Delay(1000);
+
+		Stepper1_Dir = DIR_CCW;
+		STEPPER_Step_Blocking(STEPPER_MOTOR1, 1000, Stepper1_Dir);
+		printf("Direction: %d\r\n", Stepper1_Dir);
+
+		HAL_Delay(1000);
 		/*
 		 if (killFlag) {
 		 depth = 0;
@@ -175,11 +179,14 @@ int main(void)
 		 STEPPER_Step_Blocking(STEPPER_MOTOR1, 2000, Stepper1_Dir);
 		 }
 		 }
+		 */
+		/*
 		 if (limitFlag) {
 		 depth = 0;
-		 STEPPER_Stop(STEPPER_MOTOR1);
-		 Stepper1_Dir = DIR_CCW;
-		 STEPPER_Step_Blocking(STEPPER_MOTOR1, 2000, Stepper1_Dir);
+		 printf("Limit Hit\n\r");
+		 }
+		 */
+		/*
 		 } else {
 		 if (updatedFlag) {
 		 curTime = HAL_GetTick();
@@ -202,15 +209,27 @@ int main(void)
 		 }
 		 }
 		 */
-		if (halfFlag) {
-			process_data(0, BUFFER_SIZE / 2);
-			halfFlag = 0;
-		}
-
-		if (fullFlag) {
-			process_data(BUFFER_SIZE / 2, BUFFER_SIZE);
-			fullFlag = 0;
-		}
+		/*
+		 if (!HAL_GPIO_ReadPin (GPIOB, GPIO_PIN_0) && !limitFlag) {
+		 printf("Going up\n\r");
+		 Stepper1_Dir = DIR_CW;
+		 STEPPER_Step_Blocking(STEPPER_MOTOR1, 10, Stepper1_Dir);
+		 } else if (!HAL_GPIO_ReadPin (GPIOB, GPIO_PIN_1)) {
+		 printf("Going down\n\r");
+		 Stepper1_Dir = DIR_CCW;
+		 STEPPER_Step_Blocking(STEPPER_MOTOR1, 10, Stepper1_Dir);
+		 }
+		 */
+		/*
+		 if (halfFlag) {
+		 process_data(0, BUFFER_SIZE / 2);
+		 halfFlag = 0;
+		 }
+		 if (fullFlag) {
+		 process_data(BUFFER_SIZE / 2, BUFFER_SIZE);
+		 fullFlag = 0;
+		 }
+		 */
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -235,16 +254,10 @@ void SystemClock_Config(void)
     Error_Handler();
   }
 
-  /** Configure LSE Drive Capability
-  */
-  HAL_PWR_EnableBkUpAccess();
-  __HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_LOW);
-
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSE|RCC_OSCILLATORTYPE_MSI;
-  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_MSI;
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
   RCC_OscInitStruct.MSICalibrationValue = 0;
   RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
@@ -273,10 +286,6 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-
-  /** Enable MSI Auto calibration
-  */
-  HAL_RCCEx_EnableMSIPLLMode();
 }
 
 /**
@@ -396,52 +405,6 @@ static void MX_TIM2_Init(void)
 }
 
 /**
-  * @brief TIM15 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM15_Init(void)
-{
-
-  /* USER CODE BEGIN TIM15_Init 0 */
-
-  /* USER CODE END TIM15_Init 0 */
-
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-
-  /* USER CODE BEGIN TIM15_Init 1 */
-
-  /* USER CODE END TIM15_Init 1 */
-  htim15.Instance = TIM15;
-  htim15.Init.Prescaler = 0;
-  htim15.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim15.Init.Period = 65535;
-  htim15.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim15.Init.RepetitionCounter = 0;
-  htim15.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim15) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim15, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim15, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM15_Init 2 */
-
-  /* USER CODE END TIM15_Init 2 */
-
-}
-
-/**
   * @brief USART2 Initialization Function
   * @param None
   * @retval None
@@ -488,25 +451,24 @@ static void MX_GPIO_Init(void)
 /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8|GPIO_PIN_11, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, motorcontrol1_Pin|motorcontrol2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4|GPIO_PIN_5, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, motorcontrol4_Pin|motorcontrol3_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PA8 PA11 */
-  GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_11;
+  /*Configure GPIO pins : motorcontrol1_Pin motorcontrol2_Pin */
+  GPIO_InitStruct.Pin = motorcontrol1_Pin|motorcontrol2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB4 PB5 */
-  GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5;
+  /*Configure GPIO pins : motorcontrol4_Pin motorcontrol3_Pin */
+  GPIO_InitStruct.Pin = motorcontrol4_Pin|motorcontrol3_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -623,6 +585,15 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	STEPPER_TMR_OVF_ISR(htim);
 }
+
+PUTCHAR_PROTOTYPE {
+	/* Place your implementation of fputc here */
+	/* e.g. write a character to the USART1 and Loop until the end of transmission */
+	HAL_UART_Transmit(&huart2, (uint8_t*) &ch, 1, 0xFFFF);
+
+	return ch;
+}
+
 /* USER CODE END 4 */
 
 /**
