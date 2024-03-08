@@ -55,6 +55,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
+DMA_HandleTypeDef hdma_adc1;
 
 TIM_HandleTypeDef htim2;
 
@@ -99,6 +100,7 @@ const int maxTemp = 14;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_USART2_UART_Init(void);
@@ -142,14 +144,15 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_TIM2_Init();
   MX_ADC1_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 	arm_rfft_fast_init_f32(&fftHandler, FFT_BUFFER_SIZE);
 	HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
-	HAL_ADC_Start_DMA(&hadc1, (uint32_t*) buffer, BUFFER_SIZE);
-	HAL_TIM_Base_Start_IT(&htim2);
+	//HAL_ADC_Start_DMA(&hadc1, (uint32_t*) buffer, BUFFER_SIZE);
+	//HAL_TIM_Base_Start_IT(&htim2);
 
 	STEPPERS_Init();
 	STEPPER_SetSpeed(STEPPER_MOTOR1, 14);
@@ -174,7 +177,7 @@ int main(void)
 				HAL_Delay(1000);
 			}
 
-			/*
+/*
 			 } else {
 			 if (updatedFlag) {
 			 curTime = HAL_GetTick();
@@ -199,27 +202,25 @@ int main(void)
 			 */
 
 			if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_9) == GPIO_PIN_RESET
-					&& !limitFlag) {
-				printf("Going up\n\r");
-				Stepper1_Dir = DIR_CWW;
-				STEPPER_Step_Blocking(STEPPER_MOTOR1, 10, Stepper1_Dir);
-			} else if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_10) == GPIO_PIN_RESET) {
-				printf("Going down\n\r");
+					&& !limitFlag) { // Going up
 				Stepper1_Dir = DIR_CW;
+				STEPPER_Step_Blocking(STEPPER_MOTOR1, 10, Stepper1_Dir);
+			} else if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_10) == GPIO_PIN_RESET) { // Coming down
+				Stepper1_Dir = DIR_CCW;
 				STEPPER_Step_Blocking(STEPPER_MOTOR1, 10, Stepper1_Dir);
 				limitFlag = 0;
 			}
 		}
-		/*
-		 if (halfFlag) {
-		 process_data(0, BUFFER_SIZE / 2);
-		 halfFlag = 0;
-		 }
-		 if (fullFlag) {
-		 process_data(BUFFER_SIZE / 2, BUFFER_SIZE);
-		 fullFlag = 0;
-		 }
-		 */
+
+		if (halfFlag) {
+			process_data(0, BUFFER_SIZE / 2);
+			halfFlag = 0;
+		}
+		if (fullFlag) {
+			process_data(BUFFER_SIZE / 2, BUFFER_SIZE);
+			fullFlag = 0;
+		}
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -308,9 +309,9 @@ static void MX_ADC1_Init(void)
   hadc1.Init.ContinuousConvMode = DISABLE;
   hadc1.Init.NbrOfConversion = 1;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
-  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
-  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-  hadc1.Init.DMAContinuousRequests = DISABLE;
+  hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIG_T2_TRGO;
+  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
+  hadc1.Init.DMAContinuousRequests = ENABLE;
   hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
   hadc1.Init.OversamplingMode = DISABLE;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
@@ -320,9 +321,9 @@ static void MX_ADC1_Init(void)
 
   /** Configure Regular Channel
   */
-  sConfig.Channel = ADC_CHANNEL_11;
+  sConfig.Channel = ADC_CHANNEL_5;
   sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
+  sConfig.SamplingTime = ADC_SAMPLETIME_247CYCLES_5;
   sConfig.SingleDiff = ADC_SINGLE_ENDED;
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset = 0;
@@ -374,7 +375,7 @@ static void MX_TIM2_Init(void)
   {
     Error_Handler();
   }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
   {
@@ -430,6 +431,22 @@ static void MX_USART2_UART_Init(void)
 }
 
 /**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Channel1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -450,6 +467,12 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, motorcontrol4_Pin|motorcontrol3_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin : kill_switch_Pin */
+  GPIO_InitStruct.Pin = kill_switch_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(kill_switch_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pin : limit_switch_Pin */
   GPIO_InitStruct.Pin = limit_switch_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
@@ -469,12 +492,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : kill_switch_Pin */
-  GPIO_InitStruct.Pin = kill_switch_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(kill_switch_GPIO_Port, &GPIO_InitStruct);
-
   /*Configure GPIO pins : motorcontrol4_Pin motorcontrol3_Pin */
   GPIO_InitStruct.Pin = motorcontrol4_Pin|motorcontrol3_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -486,8 +503,8 @@ static void MX_GPIO_Init(void)
   HAL_NVIC_SetPriority(EXTI1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI1_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI3_IRQn);
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
@@ -503,17 +520,6 @@ void receive_bit(int bit, int amount) {
 		receivedIndex++;
 	}
 	if (receivedIndex > 23) {
-		/*
-		 sprintf(msg, "Msg:\r\n");
-		 HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
-
-		 for(int count = 0; count < 8; count++) {
-		 sprintf(msg, "%hu", received[count]);
-		 HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
-		 }
-		 sprintf(msg, "\r\n");
-		 HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
-		 */
 		for (int count1 = 0, count2 = 8, count3 = 16; count1 < 8;
 				count1++, count2++, count3++) {
 			if (received[count1] + received[count2] + received[count3] >= 2) {
@@ -575,7 +581,7 @@ void process_data(int start, int end) {
 							/ ((float) FFT_BUFFER_SIZE));
 				}
 			}
-			//printf("%d\n", (int)peakHz);
+			//printf("%d\n\r", (int)peakHz);
 			bit_detect(peakHz);
 
 			// Reset FFT array index;

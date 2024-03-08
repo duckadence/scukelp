@@ -57,6 +57,9 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define kill_switch_Pin GPIO_PIN_4
+#define kill_switch_GPIO_Port GPIOA
+#define kill_switch_EXTI_IRQn EXTI4_IRQn
 #define limit_switch_Pin GPIO_PIN_1
 #define limit_switch_GPIO_Port GPIOB
 #define limit_switch_EXTI_IRQn EXTI1_IRQn
@@ -68,9 +71,6 @@ void Error_Handler(void);
 #define SWDIO_GPIO_Port GPIOA
 #define SWCLK_Pin GPIO_PIN_14
 #define SWCLK_GPIO_Port GPIOA
-#define kill_switch_Pin GPIO_PIN_3
-#define kill_switch_GPIO_Port GPIOB
-#define kill_switch_EXTI_IRQn EXTI3_IRQn
 #define motorcontrol4_Pin GPIO_PIN_4
 #define motorcontrol4_GPIO_Port GPIOB
 #define motorcontrol3_Pin GPIO_PIN_5
