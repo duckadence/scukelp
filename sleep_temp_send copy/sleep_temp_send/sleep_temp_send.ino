@@ -13,7 +13,7 @@ Stepper stepper(STEPS, 8, 10, 8, 11);
 unsigned long sleepTime; //sets 1s sleep time
 volatile float temp; 
 float minTemp = 10;
-float maxTemp = 40; 
+float maxTemp = 20; 
 float buffer; 
 const int BUZZER_PIN = 13;
 int index = 0;
@@ -29,7 +29,8 @@ void setup() {
 
 void loop() {
   int sends = 0; 
-  temp =  ds.getTempC();
+  //temp =  ds.getTempC();
+  temp = 25;
   if (temp<minTemp + buffer || temp>maxTemp - buffer){
     sleepTime = 5000;
   }
