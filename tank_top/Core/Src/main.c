@@ -48,9 +48,9 @@
 #define FLOAT_TO_INT16 32768.0f
 #define BUFFER_SIZE 256
 #define FFT_BUFFER_SIZE 4096
-#define SAMPLE_RATE_HZ 20000
-#define ZERO_FREQ 1000
-#define ONE_FREQ 2000
+#define SAMPLE_RATE_HZ 40000
+#define ZERO_FREQ 2031
+#define ONE_FREQ 2500
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -62,8 +62,6 @@ TIM_HandleTypeDef htim2;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-char msg[10];
-
 volatile uint16_t buffer[BUFFER_SIZE];
 volatile uint8_t halfFlag = 0;
 volatile uint8_t fullFlag = 0;
@@ -81,8 +79,8 @@ volatile int16_t fftIndex = 0;
 float peakVal = 0.0f;
 uint16_t peakHz = 0;
 
-char message[8];
-int received[24];
+char message[10];
+int received[30];
 int receivedIndex = 0;
 int zeroCount = 0;
 int oneCount = 0;
@@ -161,7 +159,6 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
-		printf("peepeepoopoo in my pants \n\r");
 		/*
 		if (killFlag) {
 			printf("Kill switch hit\n\r");
@@ -324,7 +321,7 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_5;
   sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_640CYCLES_5;
+  sConfig.SamplingTime = ADC_SAMPLETIME_247CYCLES_5;
   sConfig.SingleDiff = ADC_SINGLE_ENDED;
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset = 0;
@@ -358,7 +355,7 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 3;
+  htim2.Init.Prescaler = 40-1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim2.Init.Period = 50-1;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -516,13 +513,14 @@ void receive_bit(int bit, int amount) {
 	if (amount == 0) {
 		return;
 	}
-	for (int count = 0; count < floor(amount / 15); count++) {
+	for (int count = 0; count < round(amount / 7); count++) {
 		received[receivedIndex] = bit;
 		receivedIndex++;
 	}
-	if (receivedIndex > 23) {
-		HAL_TIM_Base_Stop_IT(&htim);
-		for (int count1 = 0, count2 = 8, count3 = 16; count1 < 8;
+	printf("Index: %d\n\n", receivedIndex);
+	if (receivedIndex > 29) {
+		//HAL_TIM_Base_Stop_IT(&htim);
+		for (int count1 = 0, count2 = 10, count3 = 20; count1 < 10;
 				count1++, count2++, count3++) {
 			if (received[count1] + received[count2] + received[count3] >= 2) {
 				message[count1] = '1';
@@ -535,24 +533,30 @@ void receive_bit(int bit, int amount) {
 		temp = strtol(message, NULL, 2);
 		temp /= 10;
 
+		printf("Received Temp: %d\n\r", (int)temp);
+
 		updatedFlag = 1;
 		receivedIndex = 0;
-		HAL_TIM_Base_Start_IT(&htim2);
+		//HAL_TIM_Base_Start_IT(&htim2);
 	}
 }
 
 void bit_detect(int freq) {
-	if (freq > ONE_FREQ - 100 && freq < ONE_FREQ + 100) {
+	if (freq > ONE_FREQ - 50 && freq < ONE_FREQ + 50) {
 		oneCount++;
 	} else {
 		receive_bit(1, oneCount);
 		oneCount = 0;
 	}
-	if (freq > ZERO_FREQ - 100 && freq < ZERO_FREQ + 100) {
+	if (freq > ZERO_FREQ - 50 && freq < ZERO_FREQ + 50) {
 		zeroCount++;
 	} else {
 		receive_bit(0, zeroCount);
 		zeroCount = 0;
+	}
+
+	if (freq == 156) {
+		receivedIndex = 0;
 	}
 }
 
@@ -583,7 +587,7 @@ void process_data(int start, int end) {
 							/ ((float) FFT_BUFFER_SIZE));
 				}
 			}
-			//printf("%d\n\r", (int)peakHz);
+			printf("%d\n\r", (int)peakHz);
 			bit_detect(peakHz);
 
 			// Reset FFT array index;
