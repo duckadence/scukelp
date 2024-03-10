@@ -1,3 +1,4 @@
+#include <LiquidCrystal.h>
 #include <math.h>
 
 #define BITS 10
@@ -6,10 +7,15 @@ const int BUZZER_PIN = 13;
 int binary_temp[BITS] = { 0 };  // 10 bits
 int flag = 0;
 
+const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+
 void setup() {
   // put your setup code here, to run once:
   pinMode(BUZZER_PIN, OUTPUT);
   pinMode(7, INPUT_PULLUP);
+
+  lcd.begin(16, 2);
 }
 
 void loop() {
