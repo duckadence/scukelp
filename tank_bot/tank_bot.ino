@@ -15,6 +15,7 @@ const float error = 1;
 float temp;
 int depth = 0;
 float oceanTemp[200];
+int waitTime = 0;
 
 const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
@@ -22,6 +23,7 @@ LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 void setup() {
   // put your setup code here, to run once:
   pinMode(BUZZER_PIN, OUTPUT);
+  pinMode(9, INPUT);
   pinMode(10, INPUT);
 
   srand(time(NULL));
@@ -31,7 +33,7 @@ void setup() {
 }
 
 void loop() {
-  if (temp < targetTemp - error || temp > targetTemp + error) {
+  if (oceanTemp[depth] < targetTemp - error || oceanTemp[depth] > targetTemp + error) {
     convert(temp);
     for (int count = 0; count < 3; count++) {
       send_message();
@@ -39,11 +41,20 @@ void loop() {
 
     for (int count = 0; count < BITS; count++) binary_temp[count] = 0;
     while (!moved) {
-      if (digitalRead(12) == HIGH) {
+      if (waitTime == 10) {
+        break;
+      }
+      if (digitalRead(10) == HIGH) {
+        depth += 5;
+        moved = 1;
+      } else if (digitalRead(9) == HIGH) {
+        depth -= 5;
         moved = 1;
       }
+      waitTime += 1;
       delay(1000);
     }
+    waitTime = 0;
   } else {
     delay(10000);
     generateOcean();
@@ -61,7 +72,7 @@ void generateOcean() {
   }
 }
 
-void convert(int decimal_temp, int decimal_depth) {  //coverts decimal temperature values into an array of bits
+void convert(int decimal_temp) {  //coverts decimal temperature values into an array of bits
   decimal_temp *= 10;
   for (int i = 0; decimal_temp > 0; i++) {
     binary_temp[i] = decimal_temp % 2;
