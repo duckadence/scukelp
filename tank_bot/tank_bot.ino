@@ -1,11 +1,20 @@
 #include <LiquidCrystal.h>
 #include <math.h>
+#include <stdlib.h>
+#include <time.h>
 
 #define BITS 10
 
 const int BUZZER_PIN = 13;
 int binary_temp[BITS] = { 0 };  // 10 bits
-int flag = 0;
+int moved = 0;
+
+
+const float targetTemp = 23;
+const float error = 1;
+float temp;
+int depth = 0;
+float oceanTemp[200];
 
 const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
@@ -13,46 +22,46 @@ LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 void setup() {
   // put your setup code here, to run once:
   pinMode(BUZZER_PIN, OUTPUT);
-  pinMode(7, INPUT_PULLUP);
+  pinMode(10, INPUT);
+
+  srand(time(NULL));
+  generateOcean();
 
   lcd.begin(16, 2);
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  if (flag) {
-#if 1
-    convert(25);
+  if (temp < targetTemp - error || temp > targetTemp + error) {
+    convert(temp);
     for (int count = 0; count < 3; count++) {
       send_message();
     }
-    
-    for (int count = 0; count < BITS; count++) binary_temp[count] = 0;
 
-    flag = 0;
-    //delay(5000);
-#else
-    tone(BUZZER_PIN, 2000);
-    delay(250);
-    tone(BUZZER_PIN, 2500);
-    delay(250);
-    tone(BUZZER_PIN, 2000);
-    delay(250);
-    tone(BUZZER_PIN, 2500);
-    delay(250);
-    noTone(BUZZER_PIN);
-    flag = 0;
-#endif
-  } else {
-    while (digitalRead(7) == HIGH) {
-      delay(1);
+    for (int count = 0; count < BITS; count++) binary_temp[count] = 0;
+    while (!moved) {
+      if (digitalRead(12) == HIGH) {
+        moved = 1;
+      }
+      delay(1000);
     }
-    delay(50);
-    flag = 1;
+  } else {
+    delay(10000);
+    generateOcean();
   }
 }
 
-void convert(int decimal_temp) {  //coverts decimal temperature values into an array of bits
+void generateOcean() {
+  for (int count = 0; count < 200; count++) {
+    float random = rand() % 2 + 1;  // Random number from 1 to 3
+    if (count == 0) {
+      oceanTemp[count] = 30;
+    } else {
+      oceanTemp[count] = oceanTemp[count - 1] - (random / 10);
+    }
+  }
+}
+
+void convert(int decimal_temp, int decimal_depth) {  //coverts decimal temperature values into an array of bits
   decimal_temp *= 10;
   for (int i = 0; decimal_temp > 0; i++) {
     binary_temp[i] = decimal_temp % 2;
