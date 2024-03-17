@@ -47,9 +47,9 @@
 #define INT16_TO_FLOAT 0.00003051757f
 #define FLOAT_TO_INT16 32768.0f
 #define BUFFER_SIZE 256
-#define FFT_BUFFER_SIZE 4096
+#define FFT_BUFFER_SIZE 1024
 #define SAMPLE_RATE_HZ 40000
-#define ZERO_FREQ 2031
+#define ZERO_FREQ 2968
 #define ONE_FREQ 2500
 /* USER CODE END PM */
 
@@ -68,6 +68,7 @@ volatile uint8_t fullFlag = 0;
 volatile uint8_t updatedFlag = 0;
 volatile uint8_t limitFlag = 0;
 volatile uint8_t killFlag = 0;
+volatile uint8_t messageFull = 0;
 
 arm_rfft_fast_instance_f32 fftHandler;
 
@@ -86,7 +87,7 @@ int zeroCount = 0;
 int oneCount = 0;
 
 float temp;
-int depth;
+int depth = 0;
 
 uint32_t curTime;
 uint8_t Stepper1_Dir; // Clockwise down, counterclockwise up
@@ -153,65 +154,82 @@ int main(void) {
 
 	STEPPERS_Init();
 	STEPPER_SetSpeed(STEPPER_MOTOR1, 14);
+
+	// Reset platform to top
+	Stepper1_Dir = DIR_CCW;
+	while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1) == GPIO_PIN_RESET) {
+		STEPPER_Step_Blocking(STEPPER_MOTOR1, 10, Stepper1_Dir);
+	}
+	STEPPER_Stop(STEPPER_MOTOR1);
+
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 	while (1) {
 		/*
+		 printf("peepeepoopoo\n\r");
+		 HAL_Delay(1);
+		 */
+		/*
 		 if (killFlag) {
-		 HAL_TIM_Base_Stop_IT(&htim2);
-		 printf("Kill switch hit\n\r");
-		 if (!limitFlag) {
-		 Stepper1_Dir = DIR_CCW;
-		 STEPPER_Step_Blocking(STEPPER_MOTOR1, 10, Stepper1_Dir);
-		 } else {
-		 depth = 0;
-		 }
-		 } else {
-		 if (limitFlag) {
-		 depth = 0;
-		 updatedFlag = 1;
-		 printf("Limit Hit\n\r");
-		 HAL_Delay(1000);
-		 }
-		 if (updatedFlag && !killFlag) {
-		 HAL_TIM_Base_Stop_IT(&htim2);
-		 if (temp < minTemp + 3) {
-		 depth -= 5;
-		 Stepper1_Dir = DIR_CCW;
-		 STEPPER_Step_Blocking(STEPPER_MOTOR1, 2000, Stepper1_Dir);
-		 if (depth < 0)
-		 depth = 0;
-		 } else if (temp > maxTemp - 3) {
-		 depth += 5;
-		 Stepper1_Dir = DIR_CW;
-		 STEPPER_Step_Blocking(STEPPER_MOTOR1, 2000, Stepper1_Dir);
-		 if (depth > 200)
-		 depth = 200;
-		 }
 
-		 updatedFlag = 0;
-		 HAL_TIM_Base_Start_IT(&htim2);
+		 printf("Kill switch hit\n\r");
+		 Stepper1_Dir = DIR_CCW;
+		 while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1) == GPIO_PIN_RESET) {
+		 STEPPER_Step_Blocking(STEPPER_MOTOR1, 10, Stepper1_Dir);
 		 }
+		 while (killFlag) {
+		 HAL_Delay(100);
 		 }
+		 HAL_ADC_Start_DMA(&hadc1, (uint32_t*) buffer, BUFFER_SIZE);
 		 }
 		 */
-		if (halfFlag) {
-			process_data(0, BUFFER_SIZE / 2);
-			halfFlag = 0;
+		if (limitFlag) {
+			depth = 0;
+			printf("Limit Hit\n\r");
+			Stepper1_Dir = DIR_CW;
 		}
-		if (fullFlag) {
-			process_data(BUFFER_SIZE / 2, BUFFER_SIZE);
-			fullFlag = 0;
+		if (updatedFlag) {
+			if (temp < minTemp + 3 && !limitFlag) {
+				printf("Going up\n\r");
+				depth -= 5;
+				Stepper1_Dir = DIR_CCW;
+				STEPPER_Step_Blocking(STEPPER_MOTOR1, 2000, Stepper1_Dir);
+				if (depth < 0)
+					depth = 0;
+			} else if (temp > maxTemp - 3) {
+				printf("Going down \n\r");
+				limitFlag = 0;
+				depth += 5;
+				Stepper1_Dir = DIR_CW;
+				STEPPER_Step_Blocking(STEPPER_MOTOR1, 2000, Stepper1_Dir);
+				if (depth > 200)
+					depth = 200;
+			} else {
+				HAL_Delay(20000);
+			}
+
+			updatedFlag = 0;
+		} else {
+			// DSP Stuff
+			if (halfFlag) {
+				process_data(0, BUFFER_SIZE / 2);
+				halfFlag = 0;
+			}
+			if (fullFlag) {
+				process_data(BUFFER_SIZE / 2, BUFFER_SIZE);
+				fullFlag = 0;
+			}
 		}
 
 		/* USER CODE END WHILE */
 
 		/* USER CODE BEGIN 3 */
 	}
+
+	/* USER CODE END 3 */
 }
-/* USER CODE END 3 */
 
 /**
  * @brief System Clock Configuration
@@ -487,30 +505,14 @@ void receive_bit(int bit, int amount) {
 	if (amount == 0) {
 		return;
 	}
-	for (int count = 0; count < round(amount / 7); count++) {
+	for (int count = 0; count < round(amount / 28); count++) {
 		received[receivedIndex] = bit;
 		receivedIndex++;
 	}
-	printf("Index: %d\n\n", receivedIndex);
 	if (receivedIndex > 29) {
-		for (int count1 = 0, count2 = 10, count3 = 20; count1 < 10;
-				count1++, count2++, count3++) {
-			if (received[count1] + received[count2] + received[count3] >= 2) {
-				message[count1] = '1';
-			} else if (received[count1] + received[count2] + received[count3]
-					<= 1) {
-				message[count1] = '0';
-			}
-		}
-
-		temp = strtol(message, NULL, 2);
-		temp /= 10;
-
-		printf("Received Temp: %d\n\r", (int) temp);
-
-		updatedFlag = 1;
-		receivedIndex = 0;
+		messageFull = 1;
 	}
+	return;
 }
 
 void bit_detect(int freq) {
@@ -526,10 +528,10 @@ void bit_detect(int freq) {
 		receive_bit(0, zeroCount);
 		zeroCount = 0;
 	}
-
 	if (freq == 156) {
 		receivedIndex = 0;
 	}
+	return;
 }
 
 void process_data(int start, int end) {
@@ -559,26 +561,48 @@ void process_data(int start, int end) {
 							/ ((float) FFT_BUFFER_SIZE));
 				}
 			}
-			printf("%d\n\r", (int) peakHz);
+			//printf("%d\n\r", (int) peakHz);
 			bit_detect(peakHz);
 
 			// Reset FFT array index;
 			fftIndex = 0;
 		}
-	}
 
+		if (messageFull) {
+			for (int count1 = 0, count2 = 10, count3 = 20; count1 < 10;
+					count1++, count2++, count3++) {
+				if (received[count1] + received[count2] + received[count3]
+						>= 2) {
+					message[count1] = '0';
+				} else if (received[count1] + received[count2]
+						+ received[count3] <= 1) {
+					message[count1] = '1';
+				}
+			}
+
+			temp = strtol(message, NULL, 2);
+			temp /= 10.0;
+
+			printf("Received Temp: %d\n\r", (int) temp);
+
+			updatedFlag = 1;
+			receivedIndex = 0;
+			messageFull = 0;
+
+			return;
+		}
+	}
+	return;
 }
 
 // Called when first half of buffer is filled
 void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc) {
 	halfFlag = 1;
-//process_data(0, BUFFER_SIZE/2);
 }
 
 // Called when buffer is completely filled
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 	fullFlag = 1;
-//process_data(BUFFER_SIZE/2, BUFFER_SIZE);
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
