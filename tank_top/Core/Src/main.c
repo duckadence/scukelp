@@ -156,6 +156,7 @@ int main(void) {
 	STEPPER_SetSpeed(STEPPER_MOTOR1, 14);
 
 	// Reset platform to top
+	printf("Resetting\n\r");x
 	Stepper1_Dir = DIR_CCW;
 	while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1) == GPIO_PIN_RESET) {
 		STEPPER_Step_Blocking(STEPPER_MOTOR1, 10, Stepper1_Dir);
@@ -171,55 +172,53 @@ int main(void) {
 		 printf("peepeepoopoo\n\r");
 		 HAL_Delay(1);
 		 */
-		/*
-		 if (killFlag) {
 
-		 printf("Kill switch hit\n\r");
-		 Stepper1_Dir = DIR_CCW;
-		 while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1) == GPIO_PIN_RESET) {
-		 STEPPER_Step_Blocking(STEPPER_MOTOR1, 10, Stepper1_Dir);
-		 }
-		 while (killFlag) {
-		 HAL_Delay(100);
-		 }
-		 HAL_ADC_Start_DMA(&hadc1, (uint32_t*) buffer, BUFFER_SIZE);
-		 }
-		 */
-		if (limitFlag) {
-			depth = 0;
-			printf("Limit Hit\n\r");
-			Stepper1_Dir = DIR_CW;
-		}
-		if (updatedFlag) {
-			if (temp < minTemp + 3 && !limitFlag) {
-				printf("Going up\n\r");
-				depth -= 5;
-				Stepper1_Dir = DIR_CCW;
-				STEPPER_Step_Blocking(STEPPER_MOTOR1, 2000, Stepper1_Dir);
-				if (depth < 0)
-					depth = 0;
-			} else if (temp > maxTemp - 3) {
-				printf("Going down \n\r");
-				limitFlag = 0;
-				depth += 5;
-				Stepper1_Dir = DIR_CW;
-				STEPPER_Step_Blocking(STEPPER_MOTOR1, 2000, Stepper1_Dir);
-				if (depth > 200)
-					depth = 200;
-			} else {
-				HAL_Delay(20000);
+		if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4) == GPIO_PIN_RESET) {
+			printf("Kill switch hit\n\r");
+			Stepper1_Dir = DIR_CCW;
+			while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1) == GPIO_PIN_RESET) {
+				STEPPER_Step_Blocking(STEPPER_MOTOR1, 10, Stepper1_Dir);
 			}
-
-			updatedFlag = 0;
+			while (killFlag) {
+				HAL_Delay(100);
+			}
 		} else {
-			// DSP Stuff
-			if (halfFlag) {
-				process_data(0, BUFFER_SIZE / 2);
-				halfFlag = 0;
+			if (limitFlag) {
+				depth = 0;
+				printf("Limit Hit\n\r");
+				Stepper1_Dir = DIR_CW;
 			}
-			if (fullFlag) {
-				process_data(BUFFER_SIZE / 2, BUFFER_SIZE);
-				fullFlag = 0;
+			if (updatedFlag) {
+				if (temp < minTemp + 3 && !limitFlag) {
+					printf("Going up\n\r");
+					depth -= 5;
+					Stepper1_Dir = DIR_CCW;
+					STEPPER_Step_Blocking(STEPPER_MOTOR1, 2000, Stepper1_Dir);
+					if (depth < 0)
+						depth = 0;
+				} else if (temp > maxTemp - 3) {
+					printf("Going down \n\r");
+					limitFlag = 0;
+					depth += 5;
+					Stepper1_Dir = DIR_CW;
+					STEPPER_Step_Blocking(STEPPER_MOTOR1, 2000, Stepper1_Dir);
+					if (depth > 200)
+						depth = 200;
+				} else {
+					HAL_Delay(20000);
+				}
+
+				updatedFlag = 0;
+			} else {
+				// DSP Stuff
+				if (halfFlag) {
+					process_data(0, BUFFER_SIZE / 2);
+					halfFlag = 0;
+				}
+				if (fullFlag) {
+					process_data(BUFFER_SIZE / 2, BUFFER_SIZE);
+					fullFlag = 0;
+				}
 			}
 		}
 
