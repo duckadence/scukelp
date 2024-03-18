@@ -92,8 +92,7 @@ int depth = 0;
 uint32_t curTime;
 uint8_t Stepper1_Dir; // Clockwise down, counterclockwise up
 
-const int minTemp = 6;
-const int maxTemp = 14;
+const int targetTemp = 23;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -156,7 +155,7 @@ int main(void) {
 	STEPPER_SetSpeed(STEPPER_MOTOR1, 14);
 
 	// Reset platform to top
-	printf("Resetting\n\r");x
+	printf("Resetting\n\r");
 	Stepper1_Dir = DIR_CCW;
 	while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1) == GPIO_PIN_RESET) {
 		STEPPER_Step_Blocking(STEPPER_MOTOR1, 10, Stepper1_Dir);
@@ -189,23 +188,24 @@ int main(void) {
 				Stepper1_Dir = DIR_CW;
 			}
 			if (updatedFlag) {
-				if (temp < minTemp + 3 && !limitFlag) {
+				if (temp < targetTemp - 1 && !limitFlag) {
 					printf("Going up\n\r");
 					depth -= 5;
 					Stepper1_Dir = DIR_CCW;
-					STEPPER_Step_Blocking(STEPPER_MOTOR1, 2000, Stepper1_Dir);
+					STEPPER_Step_Blocking(STEPPER_MOTOR1, 1000, Stepper1_Dir);
 					if (depth < 0)
 						depth = 0;
-				} else if (temp > maxTemp - 3) {
-					printf("Going down \n\r");
+				} else if (temp > targetTemp + 1) {
+					printf("Going down\n\r");
 					limitFlag = 0;
 					depth += 5;
 					Stepper1_Dir = DIR_CW;
-					STEPPER_Step_Blocking(STEPPER_MOTOR1, 2000, Stepper1_Dir);
+					STEPPER_Step_Blocking(STEPPER_MOTOR1, 1000, Stepper1_Dir);
 					if (depth > 200)
 						depth = 200;
 				} else {
-					HAL_Delay(20000);
+					printf("Perfect temp\n\r");
+					HAL_Delay(10000);
 				}
 
 				updatedFlag = 0;
