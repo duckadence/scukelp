@@ -2,6 +2,7 @@
 #include <SD.h>
 
 const int BUZZER_PIN = 13;
+File file;
 char next;
 
 void setup() {
