@@ -44,6 +44,7 @@ Drivers/STM32L4xx_HAL_Driver/Src \
 ECUAL/STEPPER \
 FATFS/App \
 FATFS/Target \
+MIDWARE/FATFS_SD \
 Middlewares/Third_Party/FatFs/src \
 Middlewares/Third_Party/FatFs/src/option \
 util \

@@ -56,9 +56,11 @@
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 
-SPI_HandleTypeDef hspi3;
+SPI_HandleTypeDef hspi1;
 
 TIM_HandleTypeDef htim2;
+
+UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 volatile uint16_t buffer[BUFFER_SIZE];
@@ -85,11 +87,13 @@ static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_ADC1_Init(void);
-static void MX_SPI3_Init(void);
+static void MX_USART2_UART_Init(void);
+static void MX_SPI1_Init(void);
 /* USER CODE BEGIN PFP */
 void process_data(int start, int end);
 void bit_detect(int freq);
 void receive_bit(int bit, int amount);
+#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -127,13 +131,60 @@ int main(void) {
 	MX_DMA_Init();
 	MX_TIM2_Init();
 	MX_ADC1_Init();
-	MX_SPI3_Init();
 	MX_FATFS_Init();
+	MX_USART2_UART_Init();
+	MX_SPI1_Init();
 	/* USER CODE BEGIN 2 */
+
 	arm_rfft_fast_init_f32(&fftHandler, FFT_BUFFER_SIZE);
 	HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
 	HAL_ADC_Start_DMA(&hadc1, (uint32_t*) buffer, BUFFER_SIZE);
 	HAL_TIM_Base_Start_IT(&htim2);
+	/*
+
+	 FATFS *FatFs;                //Fatfs handle
+	 FIL fil;                  //File handle
+	 FRESULT fres;                 //Result after operations
+
+	 do {
+	 FatFs = malloc(sizeof(FATFS));
+
+	 //Mount the SD Card
+	 fres = f_mount(FatFs, "", 0);    //1=mount now
+	 if (fres != FR_OK) {
+	 printf("Mount Failed\n\r");
+	 break;
+	 }
+
+	 HAL_Delay(1000);
+
+	 //Open the file
+	 fres = f_open(&fil, "output.txt",
+	 FA_OPEN_APPEND | FA_WRITE);
+	 if (fres != FR_OK) {
+	 printf("File Not Opened\n\r");
+	 break;
+	 }
+
+	 //write the data
+	 f_puts("0", &fil);
+	 f_puts("1", &fil);
+	 f_puts("0", &fil);
+	 f_puts("1", &fil);
+	 f_puts("0", &fil);
+	 f_puts("1", &fil);
+
+	 //close your file
+	 f_close(&fil);
+	 printf("File Closed");
+
+	 } while (0);
+
+	 //We're done, so de-mount the drive
+	 f_mount(NULL, "", 0);
+
+	 free(FatFs);
+	 */
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
@@ -242,7 +293,7 @@ static void MX_ADC1_Init(void) {
 
 	/** Configure Regular Channel
 	 */
-	sConfig.Channel = ADC_CHANNEL_5;
+	sConfig.Channel = ADC_CHANNEL_9;
 	sConfig.Rank = ADC_REGULAR_RANK_1;
 	sConfig.SamplingTime = ADC_SAMPLETIME_247CYCLES_5;
 	sConfig.SingleDiff = ADC_SINGLE_ENDED;
@@ -258,40 +309,40 @@ static void MX_ADC1_Init(void) {
 }
 
 /**
- * @brief SPI3 Initialization Function
+ * @brief SPI1 Initialization Function
  * @param None
  * @retval None
  */
-static void MX_SPI3_Init(void) {
+static void MX_SPI1_Init(void) {
 
-	/* USER CODE BEGIN SPI3_Init 0 */
+	/* USER CODE BEGIN SPI1_Init 0 */
 
-	/* USER CODE END SPI3_Init 0 */
+	/* USER CODE END SPI1_Init 0 */
 
-	/* USER CODE BEGIN SPI3_Init 1 */
+	/* USER CODE BEGIN SPI1_Init 1 */
 
-	/* USER CODE END SPI3_Init 1 */
-	/* SPI3 parameter configuration*/
-	hspi3.Instance = SPI3;
-	hspi3.Init.Mode = SPI_MODE_MASTER;
-	hspi3.Init.Direction = SPI_DIRECTION_2LINES;
-	hspi3.Init.DataSize = SPI_DATASIZE_4BIT;
-	hspi3.Init.CLKPolarity = SPI_POLARITY_LOW;
-	hspi3.Init.CLKPhase = SPI_PHASE_1EDGE;
-	hspi3.Init.NSS = SPI_NSS_SOFT;
-	hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
-	hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
-	hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
-	hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
-	hspi3.Init.CRCPolynomial = 7;
-	hspi3.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
-	hspi3.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
-	if (HAL_SPI_Init(&hspi3) != HAL_OK) {
+	/* USER CODE END SPI1_Init 1 */
+	/* SPI1 parameter configuration*/
+	hspi1.Instance = SPI1;
+	hspi1.Init.Mode = SPI_MODE_MASTER;
+	hspi1.Init.Direction = SPI_DIRECTION_2LINES;
+	hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
+	hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
+	hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
+	hspi1.Init.NSS = SPI_NSS_SOFT;
+	hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_128;
+	hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
+	hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
+	hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+	hspi1.Init.CRCPolynomial = 7;
+	hspi1.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
+	hspi1.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
+	if (HAL_SPI_Init(&hspi1) != HAL_OK) {
 		Error_Handler();
 	}
-	/* USER CODE BEGIN SPI3_Init 2 */
+	/* USER CODE BEGIN SPI1_Init 2 */
 
-	/* USER CODE END SPI3_Init 2 */
+	/* USER CODE END SPI1_Init 2 */
 
 }
 
@@ -350,6 +401,39 @@ static void MX_TIM2_Init(void) {
 }
 
 /**
+ * @brief USART2 Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_USART2_UART_Init(void) {
+
+	/* USER CODE BEGIN USART2_Init 0 */
+
+	/* USER CODE END USART2_Init 0 */
+
+	/* USER CODE BEGIN USART2_Init 1 */
+
+	/* USER CODE END USART2_Init 1 */
+	huart2.Instance = USART2;
+	huart2.Init.BaudRate = 115200;
+	huart2.Init.WordLength = UART_WORDLENGTH_8B;
+	huart2.Init.StopBits = UART_STOPBITS_1;
+	huart2.Init.Parity = UART_PARITY_NONE;
+	huart2.Init.Mode = UART_MODE_TX_RX;
+	huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+	huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+	huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+	huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+	if (HAL_UART_Init(&huart2) != HAL_OK) {
+		Error_Handler();
+	}
+	/* USER CODE BEGIN USART2_Init 2 */
+
+	/* USER CODE END USART2_Init 2 */
+
+}
+
+/**
  * Enable DMA controller clock
  */
 static void MX_DMA_Init(void) {
@@ -376,13 +460,12 @@ static void MX_GPIO_Init(void) {
 
 	/* GPIO Ports Clock Enable */
 	__HAL_RCC_GPIOA_CLK_ENABLE();
-	__HAL_RCC_GPIOB_CLK_ENABLE();
 
 	/*Configure GPIO pin Output Level */
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11, GPIO_PIN_RESET);
 
-	/*Configure GPIO pin : PA15 */
-	GPIO_InitStruct.Pin = GPIO_PIN_15;
+	/*Configure GPIO pin : PA11 */
+	GPIO_InitStruct.Pin = GPIO_PIN_11;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -398,41 +481,48 @@ void receive_bit(int bit, int amount) {
 		return;
 	}
 	for (int count = 0; count < round(amount / 28); count++) {
-		FATFS *FatFs;                //Fatfs handle
-		FIL fil;                  //File handle
-		FRESULT fres;                 //Result after operations
+		/*
+		 FATFS *FatFs;                //Fatfs handle
+		 FIL fil;                  //File handle
+		 FRESULT fres;                 //Result after operations
 
-		do {
-			FatFs = malloc(sizeof(FATFS));
+		 do {
+		 FatFs = malloc(sizeof(FATFS));
 
-			//Mount the SD Card
-			fres = f_mount(FatFs, "", 0);    //1=mount now
-			if (fres != FR_OK) {
-				break;
-			}
+		 //Mount the SD Card
+		 fres = f_mount(FatFs, "", 0);    //1=mount now
+		 if (fres != FR_OK) {
+		 break;
+		 }
 
-			//Open the file
-			fres = f_open(&fil, "output.txt",
-			FA_OPEN_APPEND | FA_WRITE);
-			if (fres != FR_OK) {
-				break;
-			}
+		 //Open the file
+		 fres = f_open(&fil, "output.txt",
+		 FA_OPEN_APPEND | FA_WRITE);
+		 if (fres != FR_OK) {
+		 break;
+		 }
 
-			//write the data
-			if (bit == 0) {
-				f_puts("0", &fil);
-			} else if (bit == 1) {
-				f_puts("1", &fil);
-			}
-			//close your file
-			f_close(&fil);
+		 //write the data
+		 if (bit == 0) {
+		 f_puts("0", &fil);
+		 } else if (bit == 1) {
+		 f_puts("1", &fil);
+		 }
+		 //close your file
+		 f_close(&fil);
 
-		} while (0);
+		 } while (0);
 
-		//We're done, so de-mount the drive
-		f_mount(NULL, "", 0);
+		 //We're done, so de-mount the drive
+		 f_mount(NULL, "", 0);
 
-		free(FatFs);
+		 free(FatFs);
+		 */
+		if (bit == 0) {
+			printf("0");
+		} else if (bit == 1) {
+			printf("1");
+		}
 	}
 	return;
 }
@@ -501,6 +591,14 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+}
+
+PUTCHAR_PROTOTYPE {
+	/* Place your implementation of fputc here */
+	/* e.g. write a character to the USART1 and Loop until the end of transmission */
+	HAL_UART_Transmit(&huart2, (uint8_t*) &ch, 1, 0xFFFF);
+
+	return ch;
 }
 
 /* USER CODE END 4 */
